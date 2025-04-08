@@ -1,0 +1,34 @@
+Pet Mood Algorithm
+
+Inputs:
+- totalTasks: number (total number of tasks, completed + pending, default to 1 if 0)
+- completionRatio: number (fraction of tasks completed, between 0 and 1)
+- recentCompletions: number (count of tasks completed in the last 48 hours)
+
+Steps:
+1. Calculate Base Score:
+   - baseScore = completionRatio * 100
+   - This gives a score from 0 to 100 based on the percentage of tasks completed.
+
+2. Calculate Recent Activity Boost:
+   - recentBoost = min(recentCompletions * 10, 30)
+   - Each recent completion adds 10 points, capped at 30 points total.
+
+3. Calculate Task Volume Factor:
+   - taskVolumeFactor = min(totalTasks / 10, 1)
+   - Scales the mood impact based on task volume; full effect at 10+ tasks, reduced if fewer.
+
+4. Compute Final Score:
+   - finalScore = (baseScore + recentBoost) * taskVolumeFactor
+   - Combines completion rate, recent activity, and task volume into a single score.
+
+5. Determine Pet Mood:
+   - if finalScore < 30: return "sad"
+   - if finalScore < 60: return "concerned"
+   - if finalScore < 90: return "happy"
+   - else: return "joy"
+   - Thresholds are dynamic and reflect the weighted score.
+
+Output:
+- mood: string ("sad", "concerned", "happy", or "joy")
+- Represents the pet's mood based on task performance.

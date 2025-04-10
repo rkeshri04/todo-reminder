@@ -22,6 +22,9 @@ export interface UserStats {
   lastCompletionDate?: string;
   achievements: Achievement[];
   milestones: Milestone[];
+  petName: string; // Original pet name field
+  robotName: string; // Added for robot theme
+  carName: string; // Added for car theme
 }
 
 export interface Achievement {

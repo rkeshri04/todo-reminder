@@ -1,4 +1,6 @@
-Pet Mood Algorithm
+Companion Mood Algorithm
+
+The algorithm works identically for all companion types (pet, robot, car). The companion's mood is a visual representation of your productivity patterns.
 
 Inputs:
 - totalTasks: number (total number of tasks, completed + pending, default to 1 if 0)
@@ -22,7 +24,7 @@ Steps:
    - finalScore = (baseScore + recentBoost) * taskVolumeFactor
    - Combines completion rate, recent activity, and task volume into a single score.
 
-5. Determine Pet Mood:
+5. Determine Companion Mood:
    - if finalScore < 30: return "sad"
    - if finalScore < 60: return "concerned"
    - if finalScore < 90: return "happy"
@@ -31,4 +33,11 @@ Steps:
 
 Output:
 - mood: string ("sad", "concerned", "happy", or "joy")
-- Represents the pet's mood based on task performance.
+- Represents the companion's mood based on task performance.
+
+Companion-specific representations:
+- Pet: Uses emotional expressions to show mood states
+- Robot: Displays different operational states based on mood
+- Car: Changes appearance to reflect performance levels
+
+All three companion types use the same underlying algorithm but have different visual representations for each mood state.

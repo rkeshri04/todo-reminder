@@ -32,6 +32,9 @@ const initialState: TasksState = {
     streakDays: 0,
     achievements: initialAchievements,
     milestones: initialMilestones,
+    petName: 'Buddy', // Default pet name
+    robotName: 'Botsie', // Default robot name
+    carName: 'Speedy', // Default car name
   }
 };
 
@@ -63,7 +66,7 @@ const taskSlice = createSlice({
         const completedTask = { 
           ...task, 
           completed: true, 
-          timestamp: Date.now() 
+          timestamp: Date.now() // Ensure timestamp is set properly
         };
         
         // Award points
@@ -167,9 +170,51 @@ const taskSlice = createSlice({
     },
     setUserStats: (state, action: PayloadAction<TasksState['userStats']>) => {
       state.userStats = action.payload;
-    }
+    },
+
+    setPetName: (state, action: PayloadAction<string>) => {
+      state.userStats.petName = action.payload;
+      // Save to AsyncStorage
+      AsyncStorage.setItem('userStats', JSON.stringify(state.userStats));
+    },
+
+    setRobotName: (state, action: PayloadAction<string>) => {
+      state.userStats.robotName = action.payload;
+      // Save to AsyncStorage
+      AsyncStorage.setItem('userStats', JSON.stringify(state.userStats));
+    },
+
+    setCarName: (state, action: PayloadAction<string>) => {
+      state.userStats.carName = action.payload;
+      // Save to AsyncStorage
+      AsyncStorage.setItem('userStats', JSON.stringify(state.userStats));
+    },
+    
+    cleanupCompletedTasks: (state) => {
+      const oneHourAgo = Date.now() - (60 * 60 * 1000); // 1 hour in milliseconds
+      const filteredCompleted = state.completed.filter(task => 
+        task.timestamp && task.timestamp > oneHourAgo
+      );
+      
+      if (filteredCompleted.length !== state.completed.length) {
+        state.completed = filteredCompleted;
+        AsyncStorage.setItem('completed', JSON.stringify(state.completed));
+      }
+    },
   },
 });
 
-export const { addTask, completeTask, skipTask, setTasks, setCompleted, restoreTask, setUserStats } = taskSlice.actions;
+export const { 
+  addTask, 
+  completeTask, 
+  skipTask, 
+  setTasks, 
+  setCompleted, 
+  restoreTask, 
+  setUserStats,
+  setPetName,
+  setRobotName,
+  setCarName,
+  cleanupCompletedTasks 
+} = taskSlice.actions;
 export default taskSlice.reducer;

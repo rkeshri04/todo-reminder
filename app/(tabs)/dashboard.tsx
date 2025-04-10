@@ -161,6 +161,7 @@ export default function Dashboard() {
   };
     
   const calculatePetMood = (total: number, ratio: number, recent: number): keyof typeof petImages => {
+    // If there are no tasks at all, companion should be happy by default
     if (total === 0) {
       return 'happy';
     } 
@@ -183,18 +184,18 @@ export default function Dashboard() {
 
   const getMoodExplanation = () => {
     if (totalTasks === 0) {
-      return "Your pet is happy! You currently don't have any tasks. Add some tasks to start tracking your productivity.";
+      return "Your companion is happy! You currently don't have any tasks. Add some tasks to start tracking your productivity.";
     } 
     const baseScore = (completionRatio * 100).toFixed(1);
     const recentBoost = Math.min(recentCompletions * 10, 30);
     const taskVolumeFactor = Math.min(totalTasks / 10, 1);
     const finalScore = Math.min((completionRatio * 100 + recentBoost) * taskVolumeFactor, 100).toFixed(1);
-    let explanation = `Your pet's mood is "${moodScore}" with a score of ${finalScore}/100. Here's why:\n` +
+    let explanation = `Your companion's mood is "${moodScore}" with a score of ${finalScore}/100. Here's why:\n` +
                      `- Task completion: ${baseScore}% of your ${totalTasks} task${totalTasks === 1 ? '' : 's'} are done.\n` +
                      `- Recent activity: ${recentCompletions} task${recentCompletions === 1 ? '' : 's'} completed in the last 48 hours adds ${recentBoost} points.\n` +
                      `- Task volume: With ${totalTasks} task${totalTasks === 1 ? '' : 's'}, your score is scaled by ${taskVolumeFactor.toFixed(2)}.`;
     if (moodScore !== 'joy') {
-      explanation += '\n\nSuggestions to improve your pet\'s mood:\n';
+      explanation += '\n\nSuggestions to improve your companion\'s mood:\n';
       if (completionRatio < 0.9) {
         explanation += `- Complete ${Math.ceil(totalTasks * (0.9 - completionRatio))} more task${totalTasks === 1 ? '' : 's'} to boost your completion rate.\n`;
       }
@@ -359,7 +360,7 @@ export default function Dashboard() {
                 <Text style={[styles.themeOptionText, { color: textColor }]}>Robot</Text>
               </TouchableOpacity>
               
-              <TouchableOpacity 
+              {/* <TouchableOpacity 
                 style={[
                   styles.themeOption,
                   selectedTheme === 'car' && { backgroundColor: primaryColor + '33' }
@@ -371,7 +372,7 @@ export default function Dashboard() {
               >
                 <View style={[styles.themeDot, { backgroundColor: '#FF5722' }]} />
                 <Text style={[styles.themeOptionText, { color: textColor }]}>Car</Text>
-              </TouchableOpacity>
+              </TouchableOpacity> */}
             </View>
           </TouchableOpacity>
         </Modal>

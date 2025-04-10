@@ -81,7 +81,7 @@ export default function Dashboard() {
     };
     setupNotifications();
 
-    const fetchStoredTasks = async () => {
+    const fetchStoredData = async () => {
       try {
         const storedTasks = await AsyncStorage.getItem('tasks');
         const storedCompleted = await AsyncStorage.getItem('completed');
@@ -96,7 +96,7 @@ export default function Dashboard() {
         console.error('Error loading tasks from storage:', err);
       }
     };
-    fetchStoredTasks();
+    fetchStoredData();
   }, [dispatch]);
 
   const scheduleTaskReminder = async (taskDescription: string) => {
@@ -161,7 +161,6 @@ export default function Dashboard() {
   };
     
   const calculatePetMood = (total: number, ratio: number, recent: number): keyof typeof petImages => {
-    // If there are no tasks at all, companion should be happy by default
     if (total === 0) {
       return 'happy';
     } 
@@ -420,7 +419,11 @@ export default function Dashboard() {
         </View>
             
         <View style={styles.taskListSection}>
-          <Collapsible title="Current Tasks" style={{ backgroundColor: 'transparent' }}>
+          <Collapsible 
+            title="Current Tasks" 
+            storageKey="currentTasksCollapsible" // Fixed: Unique key for current tasks
+            style={{ backgroundColor: 'transparent' }}
+          >
             {tasks.length === 0 ? (
               <Text style={[styles.noTasksText, { color: textColor }]}>No tasks to show!</Text>
             ) : (
@@ -440,7 +443,11 @@ export default function Dashboard() {
         </View>
 
         <View style={styles.completedSection}>
-          <Collapsible title="Completed Tasks" style={{ backgroundColor: 'transparent' }}>
+          <Collapsible 
+            title="Completed Tasks" 
+            storageKey="completedTasksCollapsible" // Fixed: Unique key for completed tasks
+            style={{ backgroundColor: 'transparent' }}
+          >
             {completed.length === 0 ? (
               <Text style={[styles.noTasksText, { color: textColor }]}>No completed tasks yet!</Text>
             ) : (
@@ -563,7 +570,11 @@ const styles = StyleSheet.create({
   petStatus: {
     fontSize: 18,
   },
-  petSection: { backgroundColor: 'transparent', alignItems: 'center', marginVertical: 20 },
+  petSection: { 
+    backgroundColor: 'transparent', 
+    alignItems: 'center', 
+    marginVertical: 20 
+  },
   petBox: { 
     borderRadius: 15, 
     padding: 20, 
@@ -574,7 +585,11 @@ const styles = StyleSheet.create({
     elevation: 3, 
     alignItems: 'center',
   },
-  petImage: { width: 180, height: 180, resizeMode: 'contain' },
+  petImage: { 
+    width: 180, 
+    height: 180, 
+    resizeMode: 'contain' 
+  },
   criticalMessage: {
     fontSize: 12,
     marginTop: 10,
@@ -615,16 +630,61 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  taskInputSection: { width: '100%', marginBottom: 20, alignItems: 'center' },
-  taskInput: { borderWidth: 1, borderRadius: 10, padding: 12, marginBottom: 10, width: '100%', fontSize: 16 },
-  addTaskBtn: { borderRadius: 10, paddingVertical: 12, paddingHorizontal: 20, width: '100%', alignItems: 'center' },
-  addTaskBtnText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  taskListSection: { backgroundColor: 'transparent', marginBottom: 30 },
-  completedSection: { backgroundColor: 'transparent', marginBottom: 30 },
-  taskItem: { borderRadius: 10, padding: 15, marginVertical: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 3, elevation: 2 },
-  taskText: { fontSize: 16 },
-  doneTask: { textDecorationLine: 'line-through', color: '#888' },
-  noTasksText: { fontSize: 16, fontStyle: 'italic', textAlign: 'center' },
+  taskInputSection: { 
+    width: '100%', 
+    marginBottom: 20, 
+    alignItems: 'center' 
+  },
+  taskInput: { 
+    borderWidth: 1, 
+    borderRadius: 10, 
+    padding: 12, 
+    marginBottom: 10, 
+    width: '100%', 
+    fontSize: 16 
+  },
+  addTaskBtn: { 
+    borderRadius: 10, 
+    paddingVertical: 12, 
+    paddingHorizontal: 20, 
+    width: '100%', 
+    alignItems: 'center' 
+  },
+  addTaskBtnText: { 
+    color: '#fff', 
+    fontSize: 16, 
+    fontWeight: '600' 
+  },
+  taskListSection: { 
+    backgroundColor: 'transparent', 
+    marginBottom: 30 
+  },
+  completedSection: { 
+    backgroundColor: 'transparent', 
+    marginBottom: 30 
+  },
+  taskItem: { 
+    borderRadius: 10, 
+    padding: 15, 
+    marginVertical: 5, 
+    shadowColor: '#000', 
+    shadowOffset: { width: 0, height: 1 }, 
+    shadowOpacity: 0.1, 
+    shadowRadius: 3, 
+    elevation: 2 
+  },
+  taskText: { 
+    fontSize: 16 
+  },
+  doneTask: { 
+    textDecorationLine: 'line-through', 
+    color: '#888' 
+  },
+  noTasksText: { 
+    fontSize: 16, 
+    fontStyle: 'italic', 
+    textAlign: 'center' 
+  },
   expiryNote: {
     fontSize: 12,
     fontStyle: 'italic',

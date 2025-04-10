@@ -52,6 +52,7 @@ export default function Dashboard() {
   const [newTaskText, setNewTaskText] = useState<string>('');
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
   const [isThemeSelectorVisible, setIsThemeSelectorVisible] = useState<boolean>(false);
+  const [isDetailedExplanation, setIsDetailedExplanation] = useState<boolean>(true);
   const { tasks, completed } = useSelector((state: RootState) => state.tasks);
   const dispatch = useDispatch();
   const theme = useColorScheme();
@@ -93,8 +94,13 @@ export default function Dashboard() {
         if (storedCompleted) {
           dispatch(setCompleted(JSON.parse(storedCompleted)));
         }
+
+        const explanationMode = await AsyncStorage.getItem('explanationMode');
+        if (explanationMode !== null) {
+          setIsDetailedExplanation(JSON.parse(explanationMode));
+        }
       } catch (err) {
-        console.error('Error loading tasks from storage:', err);
+        console.error('Error loading data from storage:', err);
       }
     };
     fetchStoredData();
@@ -222,31 +228,144 @@ export default function Dashboard() {
   ).length;
   const moodScore = calculatePetMood(totalTasks, completionRatio, recentCompletions);
 
-  const getMoodExplanation = () => {
-    if (totalTasks === 0) {
-      return "Your companion is happy! You currently don't have any tasks. Add some tasks to start tracking your productivity.";
-    } 
-    const baseScore = (completionRatio * 100).toFixed(1);
-    const recentBoost = Math.min(recentCompletions * 10, 30);
-    const taskVolumeFactor = Math.min(totalTasks / 10, 1);
-    const finalScore = Math.min((completionRatio * 100 + recentBoost) * taskVolumeFactor, 100).toFixed(1);
-    let explanation = `Your companion's mood is "${moodScore}" with a score of ${finalScore}/100. Here's why:\n` +
-                     `- Task completion: ${baseScore}% of your ${totalTasks} task${totalTasks === 1 ? '' : 's'} are done.\n` +
-                     `- Recent activity: ${recentCompletions} task${recentCompletions === 1 ? '' : 's'} completed in the last 48 hours adds ${recentBoost} points.\n` +
-                     `- Task volume: With ${totalTasks} task${totalTasks === 1 ? '' : 's'}, your score is scaled by ${taskVolumeFactor.toFixed(2)}.`;
-    if (moodScore !== 'joy') {
-      explanation += '\n\nSuggestions to improve your companion\'s mood:\n';
-      if (completionRatio < 0.9) {
-        explanation += `- Complete ${Math.ceil(totalTasks * (0.9 - completionRatio))} more task${totalTasks === 1 ? '' : 's'} to boost your completion rate.\n`;
-      }
-      if (recentCompletions < 3) {
-        explanation += `- Try completing ${3 - recentCompletions} task${recentCompletions === 1 ? '' : 's'} today or tomorrow for a recent activity boost.\n`;
-      }
-      if (totalTasks < 10) {
-        explanation += `- Add ${10 - totalTasks} more task${totalTasks === 1 ? '' : 's'} to maximize your score\'s potential.\n`;
-      }
+  const toggleExplanationMode = async () => {
+    try {
+      const newMode = !isDetailedExplanation;
+      setIsDetailedExplanation(newMode);
+      await AsyncStorage.setItem('explanationMode', JSON.stringify(newMode));
+    } catch (error) {
+      console.error('Failed to save explanation mode preference:', error);
     }
+  };
+
+  const getDetailedExplanation = () => {
+    if (totalTasks === 0) {
+      return `${currentName} is happy! You currently don't have any tasks. Add some tasks to start tracking your productivity.`;
+    } 
+    
+    const completionPercentage = (completionRatio * 100).toFixed(1);
+    const recentBoost = Math.min(recentCompletions * 10, 30);
+    const taskVolumeFactor = Math.min(totalTasks / 10, 1).toFixed(2);
+    const rawScore = (completionRatio * 100 + recentBoost) * parseFloat(taskVolumeFactor);
+    const finalScore = Math.min(rawScore, 100).toFixed(1);
+    
+    let moodDescription;
+    let emoji;
+    
+    switch(moodScore) {
+      case 'joy':
+        moodDescription = "ecstatic and thriving with your productivity";
+        emoji = "🎉";
+        break;
+      case 'happy':
+        moodDescription = "quite happy with your progress";
+        emoji = "😊";
+        break;
+      case 'concerned':
+        moodDescription = "a bit concerned about your task completion";
+        emoji = "😐";
+        break;
+      case 'sad':
+        moodDescription = "sad and needs your attention";
+        emoji = "😢";
+        break;
+    }
+    
+    let explanation = `${emoji} ${currentName} is ${moodDescription} (${finalScore}/100 points)\n\n`;
+    explanation += `Here's how ${currentName}'s mood score is calculated:\n\n`;
+    explanation += `• Base completion: ${completionPercentage}% of your ${totalTasks} ${totalTasks === 1 ? 'task' : 'tasks'} completed (${completed.length}/${totalTasks})\n`;
+    explanation += `• Recent activity: ${recentCompletions} ${recentCompletions === 1 ? 'task' : 'tasks'} completed in the last 48 hours (+${recentBoost} points)\n`;
+    explanation += `• Task volume: Score multiplier of ${taskVolumeFactor}× (reaches maximum at 10+ tasks)\n`;
+    explanation += `• Raw calculation: (${completionPercentage}% + ${recentBoost}) × ${taskVolumeFactor} = ${rawScore.toFixed(1)}\n`;
+    
+    if (moodScore !== 'joy') {
+      explanation += `\n✨ How to improve ${currentName}'s mood:\n`;
+      
+      if (completionRatio < 0.7) {
+        const tasksNeeded = Math.ceil(totalTasks * (0.7 - completionRatio));
+        explanation += `• Complete ${tasksNeeded} more ${tasksNeeded === 1 ? 'task' : 'tasks'} to significantly boost your completion rate\n`;
+      }
+      
+      if (recentCompletions < 3) {
+        explanation += `• Complete ${3 - recentCompletions} ${3 - recentCompletions === 1 ? 'task' : 'tasks'} today to maximize your recent activity bonus\n`;
+      }
+      
+      if (totalTasks < 10) {
+        explanation += `• Add ${10 - totalTasks} more ${10 - totalTasks === 1 ? 'task' : 'tasks'} to reach optimal task volume\n`;
+      }
+      
+      if (moodScore === 'sad') {
+        explanation += `\n${currentName} really needs your attention! Try completing just one task right now to make a difference.`;
+      } else if (moodScore === 'concerned') {
+        explanation += `\n${currentName} believes in you! A few completed tasks will make a big difference.`;
+      }
+    } else {
+      explanation += `\n🏆 Amazing work! ${currentName} is thriving because of your excellent productivity. Keep up the great work!`;
+    }
+    
     return explanation;
+  };
+
+  const getSimpleExplanation = () => {
+    if (totalTasks === 0) {
+      return `${currentName} is happy! You currently don't have any tasks. Add some tasks to start tracking your productivity.`;
+    } 
+    
+    const completionPercentage = Math.round(completionRatio * 100);
+    const finalScore = Math.round(Math.min((completionRatio * 100 + Math.min(recentCompletions * 10, 30)) * Math.min(totalTasks / 10, 1), 100));
+    
+    let moodDescription;
+    let emoji;
+    
+    switch(moodScore) {
+      case 'joy':
+        moodDescription = "super happy with your progress";
+        emoji = "🎉";
+        break;
+      case 'happy':
+        moodDescription = "happy with your progress";
+        emoji = "😊";
+        break;
+      case 'concerned':
+        moodDescription = "a bit worried about your task completion";
+        emoji = "😐";
+        break;
+      case 'sad':
+        moodDescription = "sad and needs your help";
+        emoji = "😢";
+        break;
+    }
+    
+    let explanation = `${emoji} ${currentName} is ${moodDescription} (${finalScore}/100 points)\n\n`;
+    explanation += `Simple breakdown:\n`;
+    explanation += `• Tasks completed: ${completed.length} out of ${totalTasks} (${completionPercentage}%)\n`;
+    explanation += `• Recent activity: ${recentCompletions} ${recentCompletions === 1 ? 'task' : 'tasks'} in the last 48 hours\n`;
+    
+    if (moodScore !== 'joy') {
+      explanation += `\n✨ Quick tips to make ${currentName} happier:\n`;
+      
+      if (completionRatio < 0.7) {
+        explanation += `• Complete more tasks\n`;
+      }
+      
+      if (recentCompletions < 3) {
+        explanation += `• Complete some tasks today\n`;
+      }
+      
+      if (moodScore === 'sad') {
+        explanation += `\n${currentName} really needs your help! Even one task would make a difference.`;
+      } else if (moodScore === 'concerned') {
+        explanation += `\n${currentName} believes in you! You can do this.`;
+      }
+    } else {
+      explanation += `\n🏆 Amazing work! ${currentName} is thriving because of your excellent productivity. Keep it up!`;
+    }
+    
+    return explanation;
+  };
+
+  const getMoodExplanation = () => {
+    return isDetailedExplanation ? getDetailedExplanation() : getSimpleExplanation();
   };
 
   const getCriticalMessage = () => {
@@ -433,6 +552,22 @@ export default function Dashboard() {
         >
           <View style={styles.modalOverlay}>
             <View style={[styles.modalContent, { backgroundColor: cardBg }]}>
+              <View style={styles.modalHeader}>
+                <Text style={[styles.modalTitle, { color: textColor }]}>
+                  Mood Explanation
+                </Text>
+                <TouchableOpacity
+                  style={[
+                    styles.modeToggleButton, 
+                    { backgroundColor: isDarkMode ? '#444' : '#e0e0e0' }
+                  ]}
+                  onPress={toggleExplanationMode}
+                >
+                  <Text style={styles.modeToggleText}>
+                    {isDetailedExplanation ? '🤓' : '😊'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
               <Text style={[styles.modalText, { color: textColor }]}>
                 {getMoodExplanation()}
               </Text>
@@ -665,6 +800,34 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 5,
     alignSelf: 'center',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+    width: '100%',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  modeToggleButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.1)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1,
+    elevation: 2,
+  },
+  modeToggleText: {
+    fontSize: 18,
   },
   modalText: {
     fontSize: 14,

@@ -201,6 +201,14 @@ const taskSlice = createSlice({
         AsyncStorage.setItem('completed', JSON.stringify(state.completed));
       }
     },
+
+    deleteTask: (state, action: PayloadAction<number>) => {
+      const taskIndex = state.completed.findIndex(t => t.id === action.payload);
+      if (taskIndex !== -1) {
+        state.completed.splice(taskIndex, 1);
+        AsyncStorage.setItem('completed', JSON.stringify(state.completed));
+      }
+    },
   },
 });
 
@@ -210,7 +218,8 @@ export const {
   skipTask, 
   setTasks, 
   setCompleted, 
-  restoreTask, 
+  restoreTask,
+  deleteTask,
   setUserStats,
   setPetName,
   setRobotName,

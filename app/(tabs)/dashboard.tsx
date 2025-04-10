@@ -11,10 +11,11 @@ import {
     Modal,
     Animated,
     Easing,
+    Alert,
 } from 'react-native';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../store/store';
-import { addTask, completeTask, setTasks, setCompleted, restoreTask } from '../../store/taskSlice';
+import { addTask, completeTask, setTasks, setCompleted, restoreTask, deleteTask } from '../../store/taskSlice';
 import { Task } from '../../types/tasks';
 import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -156,7 +157,47 @@ export default function Dashboard() {
   const undoTaskCompletion = (taskId: number) => {
     const taskExists = completed.find(task => task.id === taskId);
     if (taskExists) {
-      dispatch(restoreTask(taskId));
+      Alert.alert(
+        "Restore Task",
+        `Do you want to restore "${taskExists.text}" to your current tasks?`,
+        [
+          {
+            text: "Cancel",
+            style: "cancel"
+          },
+          { 
+            text: "Restore", 
+            onPress: () => {
+              dispatch(restoreTask(taskId));
+            }
+          }
+        ],
+        { cancelable: true }
+      );
+    }
+  };
+
+  const confirmDelete = (taskId: number) => {
+    const taskExists = completed.find(task => task.id === taskId);
+    if (taskExists) {
+      Alert.alert(
+        "Delete Task",
+        `Do you want to permanently delete "${taskExists.text}"?`,
+        [
+          {
+            text: "Cancel",
+            style: "cancel"
+          },
+          { 
+            text: "Delete", 
+            style: "destructive",
+            onPress: () => {
+              dispatch(deleteTask(taskId));
+            }
+          }
+        ],
+        { cancelable: true }
+      );
     }
   };
     
@@ -445,26 +486,38 @@ export default function Dashboard() {
         <View style={styles.completedSection}>
           <Collapsible 
             title="Completed Tasks" 
-            storageKey="completedTasksCollapsible" // Fixed: Unique key for completed tasks
+            storageKey="completedTasksCollapsible"
             style={{ backgroundColor: 'transparent' }}
           >
             {completed.length === 0 ? (
               <Text style={[styles.noTasksText, { color: textColor }]}>No completed tasks yet!</Text>
             ) : (
-              completed.map((taskItem) => (
-                <TouchableOpacity
-                  key={taskItem.id}
-                  style={[styles.taskItem, { backgroundColor: cardBg }]}
-                  onPress={() => undoTaskCompletion(taskItem.id)}
-                >
-                  <Text style={[styles.taskText, styles.doneTask, { color: textColor }]}>
-                    {taskItem.text}
-                  </Text>
-                  <Text style={[styles.expiryNote, { color: textColor }]}>
-                    {taskItem.timestamp ? `Expires ${getExpiryTime(taskItem.timestamp)}` : ''}
-                  </Text>
-                </TouchableOpacity>
-              ))
+              [...completed]
+                .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
+                .map((taskItem) => (
+                  <View 
+                    key={taskItem.id} 
+                    style={[styles.taskItem, { backgroundColor: cardBg }]}
+                  >
+                    <TouchableOpacity
+                      style={styles.taskTextContainer}
+                      onPress={() => undoTaskCompletion(taskItem.id)}
+                    >
+                      <Text style={[styles.taskText, styles.doneTask, { color: textColor }]}>
+                        {taskItem.text}
+                      </Text>
+                      <Text style={[styles.expiryNote, { color: textColor }]}>
+                        {taskItem.timestamp ? `Expires ${getExpiryTime(taskItem.timestamp)}` : ''}
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.deleteButton}
+                      onPress={() => confirmDelete(taskItem.id)}
+                    >
+                      <Text style={styles.deleteButtonText}>🗑️</Text>
+                    </TouchableOpacity>
+                  </View>
+                ))
             )}
           </Collapsible>
         </View>
@@ -671,7 +724,25 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 }, 
     shadowOpacity: 0.1, 
     shadowRadius: 3, 
-    elevation: 2 
+    elevation: 2,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  taskTextContainer: {
+    flex: 1,
+  },
+  deleteButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
+  },
+  deleteButtonText: {
+    fontSize: 18,
+    color: '#ff6b6b',
   },
   taskText: { 
     fontSize: 16 
@@ -689,5 +760,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontStyle: 'italic',
     marginTop: 4,
+  },
+  completedTaskContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 5,
   },
 });

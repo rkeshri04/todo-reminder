@@ -19,7 +19,9 @@ export interface UserStats {
   points: number;
   level: number;
   streakDays: number;
-  lastCompletionDate?: string;
+  lastStreakIncrementDate?: string; // Renamed from lastCompletionDate
+  lastTaskCompletionDate?: string; // Added: Tracks the date of the last task completion
+  tasksCompletedTodayCount: number; // Added: Tracks tasks completed today for streak
   achievements: Achievement[];
   milestones: Milestone[];
   petName: string; // Original pet name field

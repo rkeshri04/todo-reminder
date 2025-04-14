@@ -22,6 +22,8 @@ const initialMilestones: Milestone[] = [
 // Calculate experience points needed for each level (increases exponentially)
 const calculateLevelUpPoints = (level: number): number => Math.floor(100 * Math.pow(1.5, level - 1));
 
+const STREAK_THRESHOLD = 3; // Define the number of tasks needed per day for a streak
+
 const initialState: TasksState = {
   tasks: [],
   completed: [],
@@ -30,6 +32,7 @@ const initialState: TasksState = {
     points: 0,
     level: 1,
     streakDays: 0,
+    tasksCompletedTodayCount: 0, // Initialize count
     achievements: initialAchievements,
     milestones: initialMilestones,
     petName: 'Buddy', // Default pet name
@@ -79,22 +82,39 @@ const taskSlice = createSlice({
           state.userStats.level += 1;
         }
         
-        // Update streak
+        // --- Streak Logic Update ---
         const today = new Date().toISOString().split('T')[0];
-        if (state.userStats.lastCompletionDate) {
-          const yesterday = new Date();
-          yesterday.setDate(yesterday.getDate() - 1);
-          const yesterdayString = yesterday.toISOString().split('T')[0];
-          
-          if (state.userStats.lastCompletionDate === yesterdayString) {
-            state.userStats.streakDays += 1;
-          } else if (state.userStats.lastCompletionDate !== today) {
-            state.userStats.streakDays = 1;
-          }
+
+        // Update tasks completed today count
+        if (state.userStats.lastTaskCompletionDate === today) {
+          state.userStats.tasksCompletedTodayCount += 1;
         } else {
-          state.userStats.streakDays = 1;
+          // First task completed today
+          state.userStats.tasksCompletedTodayCount = 1;
         }
-        state.userStats.lastCompletionDate = today;
+        state.userStats.lastTaskCompletionDate = today; // Always update last task completion date
+
+        // Check if streak threshold is met for potential streak update
+        if (state.userStats.tasksCompletedTodayCount >= STREAK_THRESHOLD) {
+          // Only update streak if it hasn't already been updated today
+          if (state.userStats.lastStreakIncrementDate !== today) {
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            const yesterdayString = yesterday.toISOString().split('T')[0];
+
+            if (state.userStats.lastStreakIncrementDate === yesterdayString) {
+              // Streak continues
+              state.userStats.streakDays += 1;
+              state.userStats.lastStreakIncrementDate = today; // Update streak increment date
+            } else {
+              // Streak broken or first time meeting threshold
+              state.userStats.streakDays = 1;
+              state.userStats.lastStreakIncrementDate = today; // Start new streak increment date
+            }
+          }
+          // If lastStreakIncrementDate IS today, do nothing (streak already updated for today)
+        }
+        // --- End Streak Logic Update ---
         
         // Update milestone progress
         state.userStats.milestones = state.userStats.milestones.map(milestone => {
@@ -169,7 +189,16 @@ const taskSlice = createSlice({
       }
     },
     setUserStats: (state, action: PayloadAction<TasksState['userStats']>) => {
-      state.userStats = action.payload;
+      state.userStats = {
+        ...initialState.userStats, // Start with defaults
+        ...action.payload,        // Override with loaded data
+        tasksCompletedTodayCount: action.payload.tasksCompletedTodayCount ?? 0, // Ensure field exists
+      };
+      // Check if streak needs reset based on date
+      const today = new Date().toISOString().split('T')[0];
+      if (state.userStats.lastTaskCompletionDate !== today) {
+          state.userStats.tasksCompletedTodayCount = 0;
+      }
     },
 
     setPetName: (state, action: PayloadAction<string>) => {

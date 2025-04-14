@@ -1,6 +1,6 @@
-# Todo Reminder with Virtual Companions 🐾 🤖 🚗
+# Todo Reminder with Virtual Companions 🐾 🤖 
 
-A gamified todo list and reminder app with virtual companions that respond to your productivity. Complete tasks to keep your companion happy and unlock achievements! Choose between a pet, robot, or car theme based on your preference.
+A gamified todo list and reminder app with virtual companions that respond to your productivity. Complete tasks to keep your companion happy and unlock achievements! Choose between a pet or robot theme based on your preference.
 
 ![Todo Reminder App Screenshot](./assets/screenshots/app-preview.png)
 
@@ -12,6 +12,7 @@ A gamified todo list and reminder app with virtual companions that respond to yo
 - **Multiple Companions**: Choose between a pet, robot, or car as your productivity companion
 - **Customizable Names**: Give each of your virtual companions a unique name
 - **Mood Algorithm**: Your companion's mood changes based on task completion rate, recent activity, and task volume
+- **Daily Streak**: Complete **3 tasks** each day to increase your daily streak. Tap the streak icon for details!
 - **Achievements & Milestones**: Unlock achievements and reach milestones as you complete tasks
 - **Progress Tracking**: View your productivity stats and improvement over time
 - **Dark/Light Mode**: Automatically adapts to your device theme preference
@@ -27,7 +28,7 @@ A gamified todo list and reminder app with virtual companions that respond to yo
 
 ## 📱 How to Use
 
-1. **Choose Your Companion**: Tap the settings icon to switch between pet, robot, and car themes
+1. **Choose Your Companion**: Tap the settings icon (⚙️) to switch between pet, robot, and car themes
    - Each companion has its own personality and appearance
    - Name your companion to personalize your experience
 
@@ -38,12 +39,15 @@ A gamified todo list and reminder app with virtual companions that respond to yo
 3. **Complete a Task**: Tap on any task to mark it as completed
    - Your companion's mood will improve as you complete more tasks
    - Recent completions have a stronger effect on mood
+   - Complete **3 tasks** in a day to maintain or increase your daily streak
 
 4. **View Task History**: Expand the "Completed Tasks" section to see your completed tasks
 
 5. **Restore Tasks**: Tap on a completed task to move it back to current tasks
 
-6. **Companion Mood Info**: Tap the info button to see details about your companion's current mood and how to improve it
+6. **Companion Mood Info**: Tap the info button (ℹ️) to see details about your companion's current mood and how to improve it
+
+7. **Streak Info**: Tap the streak icon (🔥) in the header to see your current streak and daily progress towards the goal.
 
 ## 🧠 Companion Mood Algorithm
 
@@ -57,6 +61,11 @@ All companions have four mood states:
 - 😐 **Concerned**: Moderate productivity (score < 60)
 - 😊 **Happy**: Good productivity (score < 90)
 - 😁 **Joy**: Excellent productivity (score ≥ 90)
+
+**Daily Streak:**
+- Complete **3 tasks** within a single calendar day to increment your streak.
+- The streak resets if you miss a day (fail to complete 3 tasks).
+- Tap the 🔥 icon to view your current streak and today's progress.
 
 ## 🛠️ Technologies Used
 

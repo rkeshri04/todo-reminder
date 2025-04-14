@@ -12,6 +12,7 @@ import {
     Animated,
     Easing,
     Alert,
+    StyleSheet,
 } from 'react-native';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../store/store';
@@ -20,7 +21,6 @@ import { Task } from '../../types/tasks';
 import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Collapsible } from '@/components/Collapsible';
-import { StyleSheet } from 'react-native';
 import { useCompletedTasksCleanup } from '@/hooks/useCompletedTasksCleanup';
 import { usePetNameSetup } from '@/hooks/usePetNameSetup';
 import { PetNameModal } from '@/components/PetNameModal';
@@ -48,12 +48,15 @@ const carImages = {
   concerned: require('../../assets/pets/pet-concerned.png'),
 };
 
+const STREAK_THRESHOLD = 3;
+
 export default function Dashboard() {
   const [newTaskText, setNewTaskText] = useState<string>('');
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
   const [isThemeSelectorVisible, setIsThemeSelectorVisible] = useState<boolean>(false);
   const [isDetailedExplanation, setIsDetailedExplanation] = useState<boolean>(true);
-  const { tasks, completed } = useSelector((state: RootState) => state.tasks);
+  const [isStreakModalVisible, setIsStreakModalVisible] = useState<boolean>(false);
+  const { tasks, completed, userStats } = useSelector((state: RootState) => state.tasks);
   const dispatch = useDispatch();
   const theme = useColorScheme();
   
@@ -429,21 +432,32 @@ export default function Dashboard() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: bgColor }}>
+      <View style={styles.headerContainer}>
+        <TouchableOpacity 
+          style={styles.streakContainer}
+          onPress={() => setIsStreakModalVisible(true)}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.streakIcon}>🔥</Text>
+          <Text style={[styles.streakCount, { color: textColor }]}>{userStats.streakDays}</Text>
+        </TouchableOpacity>
+        <View style={styles.headerButtons}>
+          <TouchableOpacity 
+            style={styles.headerButton} 
+            onPress={() => setIsThemeSelectorVisible(true)}
+          >
+            <Text style={{ color: textColor, fontSize: 20 }}>⚙️</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.headerButton} 
+            onPress={() => setIsModalVisible(true)}
+          >
+            <Text style={styles.infoButtonText}>ℹ️</Text> 
+          </TouchableOpacity>
+        </View>
+      </View>
+
       <ScrollView style={[styles.container, { backgroundColor: bgColor }]}>
-        <TouchableOpacity 
-          style={styles.themeSelectorButton} 
-          onPress={() => setIsThemeSelectorVisible(true)}
-        >
-          <Text style={{ color: textColor }}>⚙️</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.infoButton} 
-          onPress={() => setIsModalVisible(true)}
-        >
-          <Text style={styles.infoButtonText}>i</Text>
-        </TouchableOpacity>
-
         <View style={styles.petSection}>
           <View style={[styles.petBox]}>
             <TouchableOpacity activeOpacity={0.8} onPress={animatePet}>
@@ -518,20 +532,6 @@ export default function Dashboard() {
                 <View style={[styles.themeDot, { backgroundColor: '#03DAC6' }]} />
                 <Text style={[styles.themeOptionText, { color: textColor }]}>Robot</Text>
               </TouchableOpacity>
-              
-              {/* <TouchableOpacity 
-                style={[
-                  styles.themeOption,
-                  selectedTheme === 'car' && { backgroundColor: primaryColor + '33' }
-                ]}
-                onPress={() => {
-                  setSelectedTheme('car');
-                  setIsThemeSelectorVisible(false);
-                }}
-              >
-                <View style={[styles.themeDot, { backgroundColor: '#FF5722' }]} />
-                <Text style={[styles.themeOptionText, { color: textColor }]}>Car</Text>
-              </TouchableOpacity> */}
             </View>
           </TouchableOpacity>
         </Modal>
@@ -581,6 +581,36 @@ export default function Dashboard() {
           </View>
         </Modal>
 
+        <Modal
+          visible={isStreakModalVisible}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setIsStreakModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalContent, { backgroundColor: cardBg }]}>
+              <Text style={[styles.modalTitle, { color: textColor, marginBottom: 20 }]}>
+                Daily Streak 🔥
+              </Text>
+              <Text style={[styles.modalText, { color: textColor, textAlign: 'center', marginBottom: 10 }]}>
+                Your current streak is <Text style={{fontWeight: 'bold'}}>{userStats.streakDays}</Text> {userStats.streakDays === 1 ? 'day' : 'days'}.
+              </Text>
+              <Text style={[styles.modalText, { color: textColor, textAlign: 'center', marginBottom: 20 }]}>
+                Complete <Text style={{fontWeight: 'bold'}}>{STREAK_THRESHOLD}</Text> tasks each day to keep the streak going!
+              </Text>
+              <Text style={[styles.modalText, { color: textColor, textAlign: 'center', marginBottom: 25 }]}>
+                Today's progress: <Text style={{fontWeight: 'bold'}}>{userStats.tasksCompletedTodayCount}</Text> / {STREAK_THRESHOLD} tasks
+              </Text>
+              <TouchableOpacity
+                style={[styles.closeButton, { backgroundColor: primaryColor }]}
+                onPress={() => setIsStreakModalVisible(false)}
+              >
+                <Text style={styles.closeButtonText}>Got it!</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+
         <View style={styles.taskInputSection}>
           <TextInput 
             style={[styles.taskInput, { backgroundColor: cardBg, color: textColor, borderColor: isDarkMode ? '#444' : '#ddd' }]}
@@ -597,7 +627,7 @@ export default function Dashboard() {
         <View style={styles.taskListSection}>
           <Collapsible 
             title="Current Tasks" 
-            storageKey="currentTasksCollapsible" // Fixed: Unique key for current tasks
+            storageKey="currentTasksCollapsible"
             style={{ backgroundColor: 'transparent' }}
           >
             {tasks.length === 0 ? (
@@ -675,93 +705,49 @@ function getExpiryTime(timestamp: number): string {
 const styles = StyleSheet.create({
   container: { 
     flex: 1, 
-    padding: 20, 
-    position: 'relative',
+    paddingHorizontal: 20, 
+    paddingBottom: 20, 
   },
-  themeSelectorButton: {
-    position: 'absolute',
-    top: 10,
-    right: 40,
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: 'transparent',
-    justifyContent: 'center',
+  headerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    zIndex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 10,
   },
-  infoButton: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#888',
-    justifyContent: 'center',
+  streakContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
-    zIndex: 1,
+    backgroundColor: 'rgba(255, 165, 0, 0.15)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 18,
+  },
+  streakIcon: {
+    fontSize: 22,
+    marginRight: 6,
+  },
+  streakCount: {
+    fontSize: 17,
+    fontWeight: 'bold',
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerButton: {
+    marginLeft: 15,
+    padding: 5,
   },
   infoButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  themeModalContent: {
-    width: 200,
-    padding: 16,
-    borderRadius: 12,
-    position: 'absolute',
-    top: 50,
-    right: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  themeModalTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  themeOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 8,
-    borderRadius: 8,
-    marginBottom: 6,
-  },
-  themeDot: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    marginRight: 10,
-  },
-  themeOptionText: {
-    fontSize: 16,
-  },
-  petStatusContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexWrap: 'wrap',
-    marginTop: 10,
-  },
-  petName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    textDecorationLine: 'underline',
-  },
-  petStatus: {
-    fontSize: 18,
+    fontSize: 20,
   },
   petSection: { 
     backgroundColor: 'transparent', 
     alignItems: 'center', 
-    marginVertical: 20 
+    marginTop: 10, 
+    marginBottom: 20 
   },
   petBox: { 
     borderRadius: 15, 
@@ -778,6 +764,21 @@ const styles = StyleSheet.create({
     height: 180, 
     resizeMode: 'contain' 
   },
+  petStatusContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+    marginTop: 10,
+  },
+  petName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    textDecorationLine: 'underline',
+  },
+  petStatus: {
+    fontSize: 18,
+  },
   criticalMessage: {
     fontSize: 12,
     marginTop: 10,
@@ -786,19 +787,20 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   modalContent: {
-    width: '80%',
-    padding: 20,
-    borderRadius: 10,
+    width: '85%',
+    maxWidth: 350,
+    padding: 25,
+    borderRadius: 15,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 8,
     alignSelf: 'center',
   },
   modalHeader: {
@@ -809,8 +811,9 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
+    textAlign: 'center',
   },
   modeToggleButton: {
     width: 36,
@@ -830,16 +833,15 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
   modalText: {
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 15,
+    fontSize: 16,
+    lineHeight: 24,
   },
   closeButton: {
-    borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 25,
     alignSelf: 'center',
-    marginTop: 10,
+    marginTop: 15,
   },
   closeButtonText: {
     color: '#fff',
@@ -928,5 +930,41 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginVertical: 5,
+  },
+  themeModalContent: {
+    width: 200,
+    padding: 16,
+    borderRadius: 12,
+    position: 'absolute',
+    top: 50,
+    right: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  themeModalTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  themeOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    marginBottom: 6,
+  },
+  themeDot: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    marginRight: 10,
+  },
+  themeOptionText: {
+    fontSize: 16,
   },
 });

@@ -56,6 +56,8 @@ export default function Dashboard() {
   const [isThemeSelectorVisible, setIsThemeSelectorVisible] = useState<boolean>(false);
   const [isDetailedExplanation, setIsDetailedExplanation] = useState<boolean>(true);
   const [isStreakModalVisible, setIsStreakModalVisible] = useState<boolean>(false);
+  const [streakTimeRemaining, setStreakTimeRemaining] = useState<string>(''); // State for countdown timer
+  const streakTimerRef = useRef<NodeJS.Timeout | null>(null); // Ref to manage timer interval
   const { tasks, completed, userStats } = useSelector((state: RootState) => state.tasks);
   const dispatch = useDispatch();
   const theme = useColorScheme();
@@ -108,6 +110,47 @@ export default function Dashboard() {
     };
     fetchStoredData();
   }, [dispatch]);
+
+  useEffect(() => {
+    const calculateAndSetRemainingTime = () => {
+      const now = new Date();
+      const endOfDay = new Date();
+      endOfDay.setHours(23, 59, 59, 999); // Set to end of the current day
+
+      const diff = endOfDay.getTime() - now.getTime();
+
+      if (diff <= 0) {
+        setStreakTimeRemaining('00 hr 00 min 00 sec');
+        return;
+      }
+
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+      setStreakTimeRemaining(
+        `${String(hours).padStart(2, '0')} hr ${String(minutes).padStart(2, '0')} min ${String(seconds).padStart(2, '0')} sec`
+      );
+    };
+
+    if (isStreakModalVisible) {
+      calculateAndSetRemainingTime(); // Initial calculation
+      streakTimerRef.current = setInterval(calculateAndSetRemainingTime, 1000); // Update every second
+    } else {
+      // Clear interval if modal is not visible
+      if (streakTimerRef.current) {
+        clearInterval(streakTimerRef.current);
+        streakTimerRef.current = null;
+      }
+    }
+
+    // Cleanup function to clear interval when component unmounts or modal visibility changes
+    return () => {
+      if (streakTimerRef.current) {
+        clearInterval(streakTimerRef.current);
+      }
+    };
+  }, [isStreakModalVisible]);
 
   const scheduleTaskReminder = async (taskDescription: string) => {
     const regex = /(.+?) every (\w+) at (\d+pm|\d+am)/i;
@@ -500,7 +543,7 @@ export default function Dashboard() {
               style={[styles.themeModalContent, { backgroundColor: cardBg }]}
               onStartShouldSetResponder={() => true}
               onTouchEnd={(e) => e.stopPropagation()}
-            >
+            > 
               <Text style={[styles.themeModalTitle, { color: textColor }]}>
                 Select Theme
               </Text>
@@ -532,7 +575,7 @@ export default function Dashboard() {
                 <View style={[styles.themeDot, { backgroundColor: '#03DAC6' }]} />
                 <Text style={[styles.themeOptionText, { color: textColor }]}>Robot</Text>
               </TouchableOpacity>
-            </View>
+            </View> 
           </TouchableOpacity>
         </Modal>
 
@@ -598,8 +641,11 @@ export default function Dashboard() {
               <Text style={[styles.modalText, { color: textColor, textAlign: 'center', marginBottom: 20 }]}>
                 Complete <Text style={{fontWeight: 'bold'}}>{STREAK_THRESHOLD}</Text> tasks each day to keep the streak going!
               </Text>
-              <Text style={[styles.modalText, { color: textColor, textAlign: 'center', marginBottom: 25 }]}>
+              <Text style={[styles.modalText, { color: textColor, textAlign: 'center', marginBottom: 15 }]}>
                 Today's progress: <Text style={{fontWeight: 'bold'}}>{userStats.tasksCompletedTodayCount}</Text> / {STREAK_THRESHOLD} tasks
+              </Text>
+              <Text style={[styles.modalText, styles.countdownText, { color: textColor }]}>
+                Time left today: {streakTimeRemaining}
               </Text>
               <TouchableOpacity
                 style={[styles.closeButton, { backgroundColor: primaryColor }]}
@@ -835,6 +881,13 @@ const styles = StyleSheet.create({
   modalText: {
     fontSize: 16,
     lineHeight: 24,
+  },
+  countdownText: {
+    textAlign: 'center',
+    fontSize: 14,
+    fontStyle: 'italic',
+    opacity: 0.8,
+    marginBottom: 25,
   },
   closeButton: {
     borderRadius: 10,

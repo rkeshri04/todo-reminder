@@ -318,8 +318,8 @@ export default function Dashboard() {
     }
     
     let explanation = `${emoji} ${currentName} is ${moodDescription} (${finalScore}/100 points)\n\n`;
-    explanation += `Here's how ${currentName}'s mood score is calculated:\n\n`;
-    explanation += `• Base completion: ${completionPercentage}% of your ${totalTasks} ${totalTasks === 1 ? 'task' : 'tasks'} completed (${completed.length}/${totalTasks})\n`;
+    // explanation += `Here's how ${currentName}'s mood score is calculated:\n\n`;
+    // explanation += `• Base completion: ${completionPercentage}% of your ${totalTasks} ${totalTasks === 1 ? 'task' : 'tasks'} completed (${completed.length}/${totalTasks})\n`;
     explanation += `• Recent activity: ${recentCompletions} ${recentCompletions === 1 ? 'task' : 'tasks'} completed in the last 48 hours (+${recentBoost} points)\n`;
     explanation += `• Task volume: Score multiplier of ${taskVolumeFactor}× (reaches maximum at 10+ tasks)\n`;
     explanation += `• Raw calculation: (${completionPercentage}% + ${recentBoost}) × ${taskVolumeFactor} = ${rawScore.toFixed(1)}\n`;
@@ -593,33 +593,37 @@ export default function Dashboard() {
           animationType="fade"
           onRequestClose={() => setIsModalVisible(false)}
         >
-          <View style={styles.modalOverlay}>
-            <View style={[styles.modalContent, { backgroundColor: cardBg }]}>
-              <View style={styles.modalHeader}>
-                <Text style={[styles.modalTitle, { color: textColor }]}>
-                  Mood Explanation
-                </Text>
-                <TouchableOpacity
-                  style={[
-                    styles.modeToggleButton, 
-                    { backgroundColor: isDarkMode ? '#444' : '#e0e0e0' }
-                  ]}
-                  onPress={toggleExplanationMode}
-                >
-                  <Text style={styles.modeToggleText}>
-                    {isDetailedExplanation ? '🤓' : '😊'}
+          <View style={styles.modalOverlayWithPadding}>
+            <View style={{width: '100%'}}>
+              <SafeAreaView>
+                <View style={[styles.modalContent, { backgroundColor: cardBg }]}>
+                  <View style={styles.modalHeader}>
+                    <Text style={[styles.modalTitle, { color: textColor }]}>
+                      Mood Explanation
+                    </Text>
+                    <TouchableOpacity
+                      style={[
+                        styles.modeToggleButton, 
+                        { backgroundColor: isDarkMode ? '#444' : '#e0e0e0' }
+                      ]}
+                      onPress={toggleExplanationMode}
+                    >
+                      <Text style={styles.modeToggleText}>
+                        {isDetailedExplanation ? '🤓' : '😊'}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                  <Text style={[styles.modalText, { color: textColor }]}>
+                    {getMoodExplanation()}
                   </Text>
-                </TouchableOpacity>
-              </View>
-              <Text style={[styles.modalText, { color: textColor }]}>
-                {getMoodExplanation()}
-              </Text>
-              <TouchableOpacity
-                style={[styles.closeButton, { backgroundColor: primaryColor }]}
-                onPress={() => setIsModalVisible(false)}
-              >
-                <Text style={styles.closeButtonText}>Close</Text>
-              </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.closeButton, { backgroundColor: primaryColor }]}
+                    onPress={() => setIsModalVisible(false)}
+                  >
+                    <Text style={styles.closeButtonText}>Close</Text>
+                  </TouchableOpacity>
+                </View>
+              </SafeAreaView>
             </View>
           </View>
         </Modal>
@@ -630,7 +634,7 @@ export default function Dashboard() {
           animationType="fade"
           onRequestClose={() => setIsStreakModalVisible(false)}
         >
-          <View style={styles.modalOverlay}>
+          <SafeAreaView style={styles.modalOverlay}>
             <View style={[styles.modalContent, { backgroundColor: cardBg }]}>
               <Text style={[styles.modalTitle, { color: textColor, marginBottom: 20 }]}>
                 Daily Streak 🔥
@@ -654,7 +658,7 @@ export default function Dashboard() {
                 <Text style={styles.closeButtonText}>Got it!</Text>
               </TouchableOpacity>
             </View>
-          </View>
+          </SafeAreaView>
         </Modal>
 
         <View style={styles.taskInputSection}>
@@ -837,6 +841,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  modalOverlayWithPadding: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 60,      // Increased top padding
+    paddingBottom: 60,   // Increased bottom padding for more margin from bottom
+  },
   modalContent: {
     width: '85%',
     maxWidth: 350,
@@ -848,18 +860,17 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 8,
     alignSelf: 'center',
+    marginVertical: 32, // Increased vertical margin for the modal
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 15,
-    width: '100%',
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    textAlign: 'center',
   },
   modeToggleButton: {
     width: 36,
@@ -887,7 +898,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontStyle: 'italic',
     opacity: 0.8,
-    marginBottom: 25,
   },
   closeButton: {
     borderRadius: 10,
@@ -904,7 +914,6 @@ const styles = StyleSheet.create({
   taskInputSection: { 
     width: '100%', 
     marginBottom: 20, 
-    alignItems: 'center' 
   },
   taskInput: { 
     borderWidth: 1, 
@@ -912,7 +921,6 @@ const styles = StyleSheet.create({
     padding: 12, 
     marginBottom: 10, 
     width: '100%', 
-    fontSize: 16 
   },
   addTaskBtn: { 
     borderRadius: 10, 
@@ -977,6 +985,7 @@ const styles = StyleSheet.create({
   expiryNote: {
     fontSize: 12,
     fontStyle: 'italic',
+    textAlign: 'center',
     marginTop: 4,
   },
   completedTaskContainer: {

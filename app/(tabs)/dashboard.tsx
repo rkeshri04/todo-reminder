@@ -24,7 +24,7 @@ import { Collapsible } from '@/components/Collapsible';
 import { useCompletedTasksCleanup } from '@/hooks/useCompletedTasksCleanup';
 import { usePetNameSetup } from '@/hooks/usePetNameSetup';
 import { PetNameModal } from '@/components/PetNameModal';
-import { useDailyNotifications, NOTIFICATION_MESSAGES } from '@/hooks/useDailyNotifications';
+import { useDailyNotifications } from '@/hooks/useDailyNotifications';
 import { useThemeSelector } from '@/hooks/useThemeSelector';
 
 const petImages = {
